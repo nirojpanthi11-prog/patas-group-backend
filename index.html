@@ -1,0 +1,652 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NexCart — AI-Powered E-Commerce</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0a0f;
+    --bg2: #12121a;
+    --bg3: #1a1a26;
+    --accent: #7c3aed;
+    --accent2: #a78bfa;
+    --accent3: #06b6d4;
+    --text: #f1f5f9;
+    --text2: #94a3b8;
+    --text3: #64748b;
+    --card: #16162a;
+    --border: rgba(124,58,237,0.2);
+    --glow: rgba(124,58,237,0.15);
+    --radius: 16px;
+    --font: 'Space Grotesk', sans-serif;
+    --font2: 'Inter', sans-serif;
+  }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  body { background: var(--bg); color: var(--text); font-family: var(--font2); overflow-x: hidden; }
+
+  /* NAV */
+  nav {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 0 5%; height: 64px;
+    background: rgba(10,10,15,0.85); backdrop-filter: blur(20px);
+    border-bottom: 1px solid var(--border);
+  }
+  .logo { font-family: var(--font); font-size: 1.5rem; font-weight: 700; color: var(--text); text-decoration: none; letter-spacing: -0.5px; }
+  .logo span { color: var(--accent2); }
+  .nav-links { display: flex; gap: 2rem; list-style: none; }
+  .nav-links a { color: var(--text2); text-decoration: none; font-size: 0.9rem; font-weight: 500; transition: color 0.2s; }
+  .nav-links a:hover { color: var(--text); }
+  .nav-actions { display: flex; align-items: center; gap: 1rem; }
+  .btn { padding: 8px 20px; border-radius: 8px; border: none; font-family: var(--font2); font-size: 0.85rem; font-weight: 600; cursor: pointer; transition: all 0.2s; }
+  .btn-ghost { background: transparent; color: var(--text2); border: 1px solid var(--border); }
+  .btn-ghost:hover { background: var(--bg3); color: var(--text); }
+  .btn-primary { background: var(--accent); color: #fff; }
+  .btn-primary:hover { background: #6d28d9; transform: translateY(-1px); }
+  .cart-btn { position: relative; background: var(--bg3); border: 1px solid var(--border); border-radius: 10px; padding: 8px 14px; cursor: pointer; color: var(--text2); font-size: 1rem; display: flex; align-items: center; gap: 6px; transition: all 0.2s; }
+  .cart-btn:hover { color: var(--text); border-color: var(--accent2); }
+  .cart-count { position: absolute; top: -6px; right: -6px; background: var(--accent); color: #fff; font-size: 0.7rem; font-weight: 700; width: 18px; height: 18px; border-radius: 50%; display: flex; align-items: center; justify-content: center; }
+
+  /* HERO */
+  #hero { position: relative; height: 100vh; display: flex; align-items: center; overflow: hidden; }
+  #canvas3d { position: absolute; inset: 0; width: 100%; height: 100%; }
+  .hero-content { position: relative; z-index: 2; padding: 0 5%; max-width: 700px; }
+  .hero-badge { display: inline-flex; align-items: center; gap: 8px; background: rgba(124,58,237,0.15); border: 1px solid rgba(124,58,237,0.35); border-radius: 100px; padding: 6px 14px; font-size: 0.78rem; font-weight: 600; color: var(--accent2); margin-bottom: 1.5rem; letter-spacing: 0.5px; }
+  .hero-badge::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: var(--accent2); animation: pulse 2s infinite; }
+  @keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:0.5;transform:scale(1.4)} }
+  h1 { font-family: var(--font); font-size: clamp(2.5rem,6vw,4.5rem); font-weight: 700; line-height: 1.1; letter-spacing: -2px; margin-bottom: 1.25rem; }
+  h1 .hl { background: linear-gradient(135deg, var(--accent2), var(--accent3)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+  .hero-sub { font-size: 1.1rem; color: var(--text2); line-height: 1.7; max-width: 500px; margin-bottom: 2rem; }
+  .hero-cta { display: flex; gap: 1rem; flex-wrap: wrap; }
+  .btn-lg { padding: 14px 32px; font-size: 1rem; border-radius: 12px; font-family: var(--font); font-weight: 600; }
+  .btn-outline { background: transparent; color: var(--text); border: 1.5px solid rgba(255,255,255,0.2); }
+  .btn-outline:hover { border-color: var(--accent2); background: rgba(124,58,237,0.1); }
+  .hero-stats { display: flex; gap: 2rem; margin-top: 3rem; flex-wrap: wrap; }
+  .stat { text-align: center; }
+  .stat-num { font-family: var(--font); font-size: 1.8rem; font-weight: 700; color: var(--text); }
+  .stat-num span { color: var(--accent2); }
+  .stat-label { font-size: 0.75rem; color: var(--text3); text-transform: uppercase; letter-spacing: 1px; }
+
+  /* SECTION */
+  section { padding: 6rem 5%; }
+  .section-title { font-family: var(--font); font-size: clamp(1.8rem,4vw,2.8rem); font-weight: 700; letter-spacing: -1px; margin-bottom: 1rem; }
+  .section-sub { color: var(--text2); font-size: 1rem; line-height: 1.7; max-width: 500px; margin-bottom: 3rem; }
+  .eyebrow { font-size: 0.75rem; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; color: var(--accent2); margin-bottom: 0.75rem; }
+
+  /* PRODUCTS */
+  .products-header { display: flex; align-items: flex-end; justify-content: space-between; margin-bottom: 2rem; flex-wrap: wrap; gap: 1rem; }
+  .filter-row { display: flex; gap: 0.5rem; flex-wrap: wrap; }
+  .filter-btn { padding: 7px 18px; border-radius: 100px; border: 1px solid var(--border); background: transparent; color: var(--text2); font-size: 0.82rem; font-weight: 500; cursor: pointer; transition: all 0.2s; font-family: var(--font2); }
+  .filter-btn.active, .filter-btn:hover { background: var(--accent); color: #fff; border-color: var(--accent); }
+  .products-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px,1fr)); gap: 1.5rem; }
+  .product-card {
+    background: var(--card); border-radius: var(--radius); border: 1px solid var(--border);
+    overflow: hidden; cursor: pointer; transition: all 0.3s;
+    position: relative;
+  }
+  .product-card:hover { transform: translateY(-6px); border-color: var(--accent2); box-shadow: 0 20px 60px rgba(124,58,237,0.15); }
+  .product-img { width: 100%; aspect-ratio: 1; background: var(--bg3); display: flex; align-items: center; justify-content: center; font-size: 4rem; position: relative; overflow: hidden; }
+  .product-img canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
+  .product-badge { position: absolute; top: 12px; left: 12px; background: var(--accent); color: #fff; font-size: 0.7rem; font-weight: 700; padding: 3px 10px; border-radius: 100px; text-transform: uppercase; letter-spacing: 0.5px; z-index: 2; }
+  .product-fav { position: absolute; top: 12px; right: 12px; background: rgba(255,255,255,0.08); border: none; border-radius: 8px; width: 34px; height: 34px; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 1rem; color: var(--text3); transition: all 0.2s; z-index: 2; }
+  .product-fav:hover, .product-fav.liked { color: #f43f5e; background: rgba(244,63,94,0.15); }
+  .product-info { padding: 1.25rem; }
+  .product-name { font-family: var(--font); font-weight: 600; font-size: 1rem; margin-bottom: 0.4rem; }
+  .product-desc { font-size: 0.82rem; color: var(--text2); line-height: 1.5; margin-bottom: 0.75rem; }
+  .product-meta { display: flex; align-items: center; justify-content: space-between; }
+  .product-price { font-family: var(--font); font-size: 1.3rem; font-weight: 700; color: var(--text); }
+  .product-price .old { font-size: 0.85rem; color: var(--text3); text-decoration: line-through; margin-left: 6px; font-weight: 400; }
+  .product-rating { display: flex; align-items: center; gap: 4px; font-size: 0.8rem; color: #f59e0b; }
+  .add-btn { width: 100%; margin-top: 1rem; padding: 10px; background: var(--bg3); border: 1px solid var(--border); border-radius: 10px; color: var(--text); font-family: var(--font2); font-size: 0.85rem; font-weight: 600; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; justify-content: center; gap: 6px; }
+  .add-btn:hover { background: var(--accent); border-color: var(--accent); }
+
+  /* FEATURES */
+  #features { background: var(--bg2); }
+  .features-grid { display: grid; grid-template-columns: repeat(auto-fit,minmax(240px,1fr)); gap: 1.5rem; }
+  .feature-card { background: var(--card); border-radius: var(--radius); border: 1px solid var(--border); padding: 2rem; transition: all 0.3s; }
+  .feature-card:hover { border-color: var(--accent2); transform: translateY(-3px); }
+  .feature-icon { width: 48px; height: 48px; background: var(--glow); border: 1px solid var(--border); border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 1.3rem; margin-bottom: 1rem; }
+  .feature-title { font-family: var(--font); font-size: 1.05rem; font-weight: 600; margin-bottom: 0.5rem; }
+  .feature-desc { font-size: 0.85rem; color: var(--text2); line-height: 1.6; }
+
+  /* BANNER */
+  .promo-banner { background: linear-gradient(135deg, var(--accent), #1d4ed8); border-radius: 20px; padding: 3rem; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1.5rem; position: relative; overflow: hidden; }
+  .promo-banner::before { content: ''; position: absolute; top: -50%; right: -10%; width: 300px; height: 300px; background: rgba(255,255,255,0.05); border-radius: 50%; }
+  .promo-text h2 { font-family: var(--font); font-size: 2rem; font-weight: 700; margin-bottom: 0.5rem; }
+  .promo-text p { color: rgba(255,255,255,0.8); font-size: 0.95rem; }
+  .btn-white { background: #fff; color: var(--accent); font-weight: 700; padding: 14px 28px; border-radius: 12px; border: none; cursor: pointer; font-family: var(--font); font-size: 0.95rem; transition: all 0.2s; }
+  .btn-white:hover { transform: scale(1.03); }
+
+  /* CHATBOT */
+  #chatbot-toggle {
+    position: fixed; bottom: 24px; right: 24px; z-index: 200;
+    width: 58px; height: 58px; border-radius: 50%;
+    background: var(--accent); border: none; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.4rem; color: #fff; box-shadow: 0 8px 30px rgba(124,58,237,0.4);
+    transition: all 0.3s;
+  }
+  #chatbot-toggle:hover { transform: scale(1.1); box-shadow: 0 12px 40px rgba(124,58,237,0.5); }
+  #chatbot-toggle .badge { position: absolute; top: 0; right: 0; width: 14px; height: 14px; background: #10b981; border-radius: 50%; border: 2px solid var(--bg); }
+  #chatbot-panel {
+    position: fixed; bottom: 96px; right: 24px; z-index: 200;
+    width: 380px; max-height: 560px; background: var(--card);
+    border: 1px solid var(--border); border-radius: 20px;
+    display: flex; flex-direction: column; overflow: hidden;
+    box-shadow: 0 30px 80px rgba(0,0,0,0.5);
+    transform: scale(0.9) translateY(20px); opacity: 0;
+    pointer-events: none; transition: all 0.3s cubic-bezier(0.34,1.56,0.64,1);
+  }
+  #chatbot-panel.open { transform: scale(1) translateY(0); opacity: 1; pointer-events: all; }
+  .chat-header { padding: 1.25rem 1.5rem; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 12px; }
+  .chat-avatar { width: 38px; height: 38px; border-radius: 10px; background: linear-gradient(135deg, var(--accent), var(--accent3)); display: flex; align-items: center; justify-content: center; font-size: 1.1rem; flex-shrink: 0; }
+  .chat-header-info { flex: 1; }
+  .chat-header-name { font-family: var(--font); font-weight: 600; font-size: 0.95rem; }
+  .chat-header-status { font-size: 0.75rem; color: #10b981; display: flex; align-items: center; gap: 4px; }
+  .chat-header-status::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: #10b981; }
+  .chat-close { background: none; border: none; color: var(--text3); cursor: pointer; font-size: 1.1rem; padding: 4px; transition: color 0.2s; }
+  .chat-close:hover { color: var(--text); }
+  .chat-messages { flex: 1; overflow-y: auto; padding: 1.25rem; display: flex; flex-direction: column; gap: 1rem; min-height: 0; }
+  .chat-messages::-webkit-scrollbar { width: 4px; }
+  .chat-messages::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+  .msg { max-width: 80%; display: flex; flex-direction: column; gap: 4px; }
+  .msg.bot { align-self: flex-start; }
+  .msg.user { align-self: flex-end; }
+  .msg-bubble { padding: 10px 14px; border-radius: 14px; font-size: 0.875rem; line-height: 1.55; }
+  .msg.bot .msg-bubble { background: var(--bg3); border: 1px solid var(--border); color: var(--text); border-bottom-left-radius: 4px; }
+  .msg.user .msg-bubble { background: var(--accent); color: #fff; border-bottom-right-radius: 4px; }
+  .msg-time { font-size: 0.7rem; color: var(--text3); padding: 0 4px; }
+  .msg.user .msg-time { text-align: right; }
+  .chat-quick { padding: 0 1.25rem 0.75rem; display: flex; gap: 0.5rem; flex-wrap: wrap; }
+  .quick-chip { padding: 5px 12px; background: var(--bg3); border: 1px solid var(--border); border-radius: 100px; font-size: 0.75rem; color: var(--text2); cursor: pointer; transition: all 0.2s; white-space: nowrap; }
+  .quick-chip:hover { background: var(--accent); color: #fff; border-color: var(--accent); }
+  .chat-input-area { padding: 1rem 1.25rem; border-top: 1px solid var(--border); display: flex; gap: 0.75rem; align-items: flex-end; }
+  .chat-input { flex: 1; background: var(--bg3); border: 1px solid var(--border); border-radius: 12px; padding: 10px 14px; color: var(--text); font-family: var(--font2); font-size: 0.875rem; outline: none; resize: none; min-height: 42px; max-height: 100px; transition: border-color 0.2s; }
+  .chat-input:focus { border-color: var(--accent); }
+  .chat-input::placeholder { color: var(--text3); }
+  .chat-send { width: 42px; height: 42px; background: var(--accent); border: none; border-radius: 10px; cursor: pointer; display: flex; align-items: center; justify-content: center; color: #fff; font-size: 1rem; transition: all 0.2s; flex-shrink: 0; }
+  .chat-send:hover { background: #6d28d9; }
+  .typing-indicator { display: flex; gap: 4px; align-items: center; padding: 12px 14px; }
+  .typing-dot { width: 6px; height: 6px; background: var(--text3); border-radius: 50%; animation: typing 1.4s infinite; }
+  .typing-dot:nth-child(2) { animation-delay: 0.2s; }
+  .typing-dot:nth-child(3) { animation-delay: 0.4s; }
+  @keyframes typing { 0%,80%,100%{transform:scale(1);opacity:0.4} 40%{transform:scale(1.3);opacity:1} }
+
+  /* CART DRAWER */
+  #cart-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 300; opacity: 0; pointer-events: none; transition: opacity 0.3s; backdrop-filter: blur(4px); }
+  #cart-overlay.open { opacity: 1; pointer-events: all; }
+  #cart-drawer {
+    position: fixed; top: 0; right: 0; bottom: 0; z-index: 301;
+    width: 400px; background: var(--card); border-left: 1px solid var(--border);
+    display: flex; flex-direction: column;
+    transform: translateX(100%); transition: transform 0.35s cubic-bezier(0.4,0,0.2,1);
+  }
+  #cart-drawer.open { transform: translateX(0); }
+  .drawer-header { padding: 1.5rem; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; }
+  .drawer-title { font-family: var(--font); font-size: 1.2rem; font-weight: 700; }
+  .drawer-close { background: none; border: none; color: var(--text2); font-size: 1.3rem; cursor: pointer; padding: 4px; transition: color 0.2s; }
+  .drawer-close:hover { color: var(--text); }
+  .cart-items { flex: 1; overflow-y: auto; padding: 1.25rem; display: flex; flex-direction: column; gap: 1rem; }
+  .cart-item { display: flex; gap: 1rem; align-items: center; background: var(--bg3); border-radius: 12px; padding: 1rem; border: 1px solid var(--border); }
+  .cart-item-img { width: 60px; height: 60px; border-radius: 8px; background: var(--bg2); display: flex; align-items: center; justify-content: center; font-size: 1.8rem; flex-shrink: 0; }
+  .cart-item-info { flex: 1; }
+  .cart-item-name { font-weight: 600; font-size: 0.9rem; margin-bottom: 3px; }
+  .cart-item-price { font-size: 0.85rem; color: var(--accent2); font-weight: 600; }
+  .cart-item-qty { display: flex; align-items: center; gap: 10px; margin-top: 6px; }
+  .qty-btn { width: 24px; height: 24px; background: var(--bg2); border: 1px solid var(--border); border-radius: 6px; cursor: pointer; color: var(--text); font-size: 0.9rem; display: flex; align-items: center; justify-content: center; transition: all 0.2s; }
+  .qty-btn:hover { background: var(--accent); border-color: var(--accent); }
+  .qty-num { font-size: 0.85rem; font-weight: 600; min-width: 20px; text-align: center; }
+  .cart-remove { background: none; border: none; color: var(--text3); cursor: pointer; font-size: 0.9rem; padding: 4px; transition: color 0.2s; }
+  .cart-remove:hover { color: #f43f5e; }
+  .cart-empty { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; color: var(--text3); font-size: 0.9rem; gap: 0.75rem; }
+  .cart-empty-icon { font-size: 3rem; }
+  .cart-footer { padding: 1.5rem; border-top: 1px solid var(--border); }
+  .cart-total { display: flex; justify-content: space-between; margin-bottom: 0.75rem; font-size: 0.9rem; color: var(--text2); }
+  .cart-grand { display: flex; justify-content: space-between; font-family: var(--font); font-size: 1.2rem; font-weight: 700; margin-bottom: 1.25rem; }
+  .checkout-btn { width: 100%; padding: 14px; background: var(--accent); color: #fff; border: none; border-radius: 12px; font-family: var(--font); font-size: 1rem; font-weight: 700; cursor: pointer; transition: all 0.2s; }
+  .checkout-btn:hover { background: #6d28d9; transform: translateY(-1px); }
+
+  /* FOOTER */
+  footer { background: var(--bg2); border-top: 1px solid var(--border); padding: 4rem 5% 2rem; }
+  .footer-grid { display: grid; grid-template-columns: 2fr 1fr 1fr 1fr; gap: 3rem; margin-bottom: 3rem; }
+  .footer-brand p { color: var(--text2); font-size: 0.88rem; line-height: 1.7; margin-top: 0.75rem; max-width: 280px; }
+  .footer-col h4 { font-family: var(--font); font-weight: 600; font-size: 0.9rem; margin-bottom: 1rem; }
+  .footer-col ul { list-style: none; display: flex; flex-direction: column; gap: 0.6rem; }
+  .footer-col a { color: var(--text2); text-decoration: none; font-size: 0.85rem; transition: color 0.2s; }
+  .footer-col a:hover { color: var(--accent2); }
+  .footer-bottom { border-top: 1px solid var(--border); padding-top: 1.5rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; }
+  .footer-bottom p { color: var(--text3); font-size: 0.82rem; }
+
+  /* TOAST */
+  #toast { position: fixed; bottom: 100px; left: 50%; transform: translateX(-50%) translateY(20px); background: var(--card); border: 1px solid #10b981; border-radius: 12px; padding: 12px 24px; color: var(--text); font-size: 0.875rem; font-weight: 500; z-index: 500; opacity: 0; transition: all 0.3s; display: flex; align-items: center; gap: 8px; box-shadow: 0 10px 40px rgba(0,0,0,0.4); }
+  #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+  #toast .toast-icon { color: #10b981; font-size: 1rem; }
+
+  /* SCROLL REVEAL */
+  .reveal { opacity: 0; transform: translateY(30px); transition: opacity 0.6s, transform 0.6s; }
+  .reveal.visible { opacity: 1; transform: translateY(0); }
+
+  @media (max-width: 768px) {
+    .nav-links { display: none; }
+    .footer-grid { grid-template-columns: 1fr 1fr; }
+    #chatbot-panel { width: calc(100vw - 32px); right: 16px; }
+    #cart-drawer { width: 100vw; }
+    .hero-stats { gap: 1.25rem; }
+  }
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <a href="#" class="logo">Nex<span>Cart</span></a>
+  <ul class="nav-links">
+    <li><a href="#products">Shop</a></li>
+    <li><a href="#features">Features</a></li>
+    <li><a href="#deals">Deals</a></li>
+    <li><a href="#">About</a></li>
+  </ul>
+  <div class="nav-actions">
+    <button class="btn btn-ghost" onclick="showToast('🔍 Search coming soon!')">🔍 Search</button>
+    <button class="cart-btn" onclick="openCart()">🛒 Cart <span class="cart-count" id="cartCount">0</span></button>
+  </div>
+</nav>
+
+<!-- HERO -->
+<section id="hero">
+  <canvas id="canvas3d"></canvas>
+  <div class="hero-content">
+    <div class="hero-badge">✦ AI-POWERED SHOPPING EXPERIENCE</div>
+    <h1>Shop Smarter<br>with <span class="hl">Intelligent</span><br>Commerce</h1>
+    <p class="hero-sub">Experience the future of shopping — personalized recommendations, instant AI support, and a seamless checkout. Built for Nepal and beyond.</p>
+    <div class="hero-cta">
+      <button class="btn btn-primary btn-lg" onclick="document.getElementById('products').scrollIntoView({behavior:'smooth'})">Explore Products</button>
+      <button class="btn btn-outline btn-lg" onclick="openChatbot()">💬 Ask AI Assistant</button>
+    </div>
+    <div class="hero-stats">
+      <div class="stat"><div class="stat-num">12<span>K+</span></div><div class="stat-label">Products</div></div>
+      <div class="stat"><div class="stat-num">98<span>%</span></div><div class="stat-label">Satisfaction</div></div>
+      <div class="stat"><div class="stat-num">24<span>/7</span></div><div class="stat-label">AI Support</div></div>
+    </div>
+  </div>
+</section>
+
+<!-- PRODUCTS -->
+<section id="products">
+  <div class="products-header reveal">
+    <div>
+      <div class="eyebrow">Curated Picks</div>
+      <h2 class="section-title">Trending Now</h2>
+    </div>
+    <div class="filter-row">
+      <button class="filter-btn active" onclick="filterProducts('all',this)">All</button>
+      <button class="filter-btn" onclick="filterProducts('electronics',this)">Electronics</button>
+      <button class="filter-btn" onclick="filterProducts('fashion',this)">Fashion</button>
+      <button class="filter-btn" onclick="filterProducts('home',this)">Home</button>
+    </div>
+  </div>
+  <div class="products-grid reveal" id="productsGrid"></div>
+</section>
+
+<!-- FEATURES -->
+<section id="features">
+  <div class="reveal" style="max-width:600px">
+    <div class="eyebrow">Why NexCart</div>
+    <h2 class="section-title">Built Different</h2>
+    <p class="section-sub">Every feature is designed around one principle: make your shopping smarter, faster, and more enjoyable.</p>
+  </div>
+  <div class="features-grid reveal">
+    <div class="feature-card"><div class="feature-icon">🤖</div><div class="feature-title">AI Chatbot Support</div><div class="feature-desc">Get instant answers, product help, and order tracking — 24/7 with our Claude-powered assistant.</div></div>
+    <div class="feature-card"><div class="feature-icon">✨</div><div class="feature-title">Smart Recommendations</div><div class="feature-desc">Collaborative filtering and content-based AI learns your preferences and surfaces products you'll love.</div></div>
+    <div class="feature-card"><div class="feature-icon">🔒</div><div class="feature-title">Secure Checkout</div><div class="feature-desc">End-to-end encrypted transactions with multi-factor auth and fraud detection built in.</div></div>
+    <div class="feature-card"><div class="feature-icon">⚡</div><div class="feature-title">Lightning Fast</div><div class="feature-desc">Sub-100ms search, lazy-loaded 3D assets, and a global CDN keep every interaction instant.</div></div>
+    <div class="feature-card"><div class="feature-icon">📦</div><div class="feature-title">Real-time Tracking</div><div class="feature-desc">Live order updates from warehouse to doorstep, integrated with Nepal's courier network.</div></div>
+    <div class="feature-card"><div class="feature-icon">🌐</div><div class="feature-title">Multi-currency</div><div class="feature-desc">Shop in NPR, USD, and more. Automatic conversion with live exchange rates.</div></div>
+  </div>
+</section>
+
+<!-- PROMO BANNER -->
+<section id="deals" style="padding-top:0">
+  <div class="promo-banner reveal">
+    <div class="promo-text">
+      <h2>Flash Sale — 50% Off Electronics</h2>
+      <p>Today only: top-rated gadgets at half price. Hurry — limited stock!</p>
+    </div>
+    <button class="btn-white" onclick="filterProducts('electronics',null)">Shop Now →</button>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="footer-grid">
+    <div class="footer-brand">
+      <div class="logo" style="font-size:1.4rem">Nex<span style="color:var(--accent2)">Cart</span></div>
+      <p>An AI-powered e-commerce platform built by Computer Engineering students at Lumbini Engineering College, Nepal.</p>
+    </div>
+    <div class="footer-col"><h4>Shop</h4><ul><li><a href="#">Electronics</a></li><li><a href="#">Fashion</a></li><li><a href="#">Home & Living</a></li><li><a href="#">Deals</a></li></ul></div>
+    <div class="footer-col"><h4>Support</h4><ul><li><a href="#">FAQ</a></li><li><a href="#">Track Order</a></li><li><a href="#">Returns</a></li><li><a href="#">Contact</a></li></ul></div>
+    <div class="footer-col"><h4>Company</h4><ul><li><a href="#">About</a></li><li><a href="#">Blog</a></li><li><a href="#">Careers</a></li><li><a href="#">Privacy</a></li></ul></div>
+  </div>
+  <div class="footer-bottom">
+    <p>© 2026 NexCart. Built at Lumbini Engineering, Management and Science College.</p>
+    <p>MERN Stack · Three.js · Claude API</p>
+  </div>
+</footer>
+
+<!-- CHATBOT -->
+<button id="chatbot-toggle" onclick="openChatbot()">💬<div class="badge"></div></button>
+<div id="chatbot-panel">
+  <div class="chat-header">
+    <div class="chat-avatar">🤖</div>
+    <div class="chat-header-info">
+      <div class="chat-header-name">NexCart AI</div>
+      <div class="chat-header-status">Online — always here</div>
+    </div>
+    <button class="chat-close" onclick="closeChatbot()">✕</button>
+  </div>
+  <div class="chat-messages" id="chatMessages"></div>
+  <div class="chat-quick" id="quickChips">
+    <span class="quick-chip" onclick="sendQuick(this)">Show deals</span>
+    <span class="quick-chip" onclick="sendQuick(this)">Track my order</span>
+    <span class="quick-chip" onclick="sendQuick(this)">Best phones</span>
+    <span class="quick-chip" onclick="sendQuick(this)">Return policy</span>
+  </div>
+  <div class="chat-input-area">
+    <textarea class="chat-input" id="chatInput" rows="1" placeholder="Ask anything..." onkeydown="handleChatKey(event)"></textarea>
+    <button class="chat-send" onclick="sendChat()">➤</button>
+  </div>
+</div>
+
+<!-- CART DRAWER -->
+<div id="cart-overlay" onclick="closeCart()"></div>
+<div id="cart-drawer">
+  <div class="drawer-header">
+    <div class="drawer-title">Your Cart</div>
+    <button class="drawer-close" onclick="closeCart()">✕</button>
+  </div>
+  <div class="cart-items" id="cartItems"></div>
+  <div class="cart-footer" id="cartFooter" style="display:none">
+    <div class="cart-total"><span>Subtotal</span><span id="cartSubtotal">NPR 0</span></div>
+    <div class="cart-total"><span>Shipping</span><span>Free</span></div>
+    <div class="cart-grand"><span>Total</span><span id="cartTotal">NPR 0</span></div>
+    <button class="checkout-btn" onclick="showToast('🎉 Checkout coming in the full build!')">Proceed to Checkout</button>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div id="toast"><span class="toast-icon">✓</span><span id="toastMsg">Done!</span></div>
+
+<script>
+/* ===== DATA ===== */
+const PRODUCTS = [
+  {id:1,name:'ProBook Laptop 15"',desc:'Intel Core i7, 16GB RAM, 512GB SSD',price:125000,old:155000,emoji:'💻',category:'electronics',rating:4.8,badge:'Hot'},
+  {id:2,name:'NexBuds Pro',desc:'Active noise cancellation, 30hr battery',price:8500,old:12000,emoji:'🎧',category:'electronics',rating:4.7,badge:'Sale'},
+  {id:3,name:'Smart Watch X5',desc:'Health tracking, GPS, AMOLED display',price:22000,old:28000,emoji:'⌚',category:'electronics',rating:4.6,badge:null},
+  {id:4,name:'Merino Wool Jacket',desc:'Lightweight, breathable, sustainable',price:4800,old:null,emoji:'🧥',category:'fashion',rating:4.5,badge:'New'},
+  {id:5,name:'Minimalist Desk Lamp',desc:'USB-C charging, 5 color modes',price:3200,old:4500,emoji:'🪔',category:'home',rating:4.9,badge:null},
+  {id:6,name:'Portable SSD 1TB',desc:'2000 MB/s read speed, USB-C',price:9800,old:12500,emoji:'💾',category:'electronics',rating:4.8,badge:'Hot'},
+  {id:7,name:'Cotton Kurtha Set',desc:'Handwoven fabric, traditional design',price:2400,old:null,emoji:'👘',category:'fashion',rating:4.3,badge:null},
+  {id:8,name:'Bamboo Kitchen Set',desc:'Eco-friendly, 12-piece set',price:1800,old:2500,emoji:'🍴',category:'home',rating:4.7,badge:'Sale'},
+];
+
+let cart = [];
+let likes = {};
+let allProducts = [...PRODUCTS];
+let currentFilter = 'all';
+
+/* ===== THREE.JS 3D HERO ===== */
+function init3D() {
+  const canvas = document.getElementById('canvas3d');
+  const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  renderer.setSize(window.innerWidth, window.innerHeight);
+
+  const scene = new THREE.Scene();
+  const camera = new THREE.PerspectiveCamera(60, window.innerWidth/window.innerHeight, 0.1, 100);
+  camera.position.set(0, 0, 8);
+
+  // Particles
+  const pGeo = new THREE.BufferGeometry();
+  const N = 2000;
+  const pos = new Float32Array(N * 3);
+  for (let i = 0; i < N * 3; i++) pos[i] = (Math.random() - 0.5) * 30;
+  pGeo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+  const pMat = new THREE.PointsMaterial({ color: 0x7c3aed, size: 0.06, transparent: true, opacity: 0.6 });
+  scene.add(new THREE.Points(pGeo, pMat));
+
+  // Floating cubes
+  const cubes = [];
+  const cubeMat = new THREE.MeshStandardMaterial({ color: 0x7c3aed, wireframe: false, transparent: true, opacity: 0.18 });
+  const wMat = new THREE.MeshBasicMaterial({ color: 0xa78bfa, wireframe: true, transparent: true, opacity: 0.5 });
+  for (let i = 0; i < 14; i++) {
+    const s = Math.random() * 0.6 + 0.2;
+    const geo = new THREE.BoxGeometry(s, s, s);
+    const mesh = new THREE.Mesh(geo, cubeMat);
+    const wire = new THREE.Mesh(geo, wMat);
+    mesh.position.set((Math.random()-0.5)*14, (Math.random()-0.5)*8, (Math.random()-0.5)*6 - 2);
+    mesh.add(wire);
+    mesh.userData = { speed: Math.random()*0.3+0.1, phase: Math.random()*Math.PI*2, rotX: (Math.random()-0.5)*0.02, rotY: (Math.random()-0.5)*0.02 };
+    scene.add(mesh);
+    cubes.push(mesh);
+  }
+
+  // Central icosahedron
+  const icoGeo = new THREE.IcosahedronGeometry(1.6, 1);
+  const icoMat = new THREE.MeshStandardMaterial({ color: 0x7c3aed, wireframe: false, transparent: true, opacity: 0.12 });
+  const icoWire = new THREE.MeshBasicMaterial({ color: 0xa78bfa, wireframe: true, transparent: true, opacity: 0.35 });
+  const ico = new THREE.Mesh(icoGeo, icoMat);
+  const icoW = new THREE.Mesh(icoGeo, icoWire);
+  ico.position.set(4, 0, 0);
+  ico.add(icoW);
+  scene.add(ico);
+
+  // Torus ring
+  const torusGeo = new THREE.TorusGeometry(2.8, 0.04, 8, 80);
+  const torusMat = new THREE.MeshBasicMaterial({ color: 0x06b6d4, transparent: true, opacity: 0.3 });
+  const torus = new THREE.Mesh(torusGeo, torusMat);
+  torus.position.set(4, 0, 0);
+  torus.rotation.x = Math.PI / 4;
+  scene.add(torus);
+
+  // Lighting
+  scene.add(new THREE.AmbientLight(0x7c3aed, 0.8));
+  const pLight = new THREE.PointLight(0xa78bfa, 2, 20);
+  pLight.position.set(4, 3, 3);
+  scene.add(pLight);
+
+  let mouse = { x: 0, y: 0 };
+  document.addEventListener('mousemove', e => { mouse.x = (e.clientX/window.innerWidth - 0.5) * 2; mouse.y = -(e.clientY/window.innerHeight - 0.5) * 2; });
+
+  const clock = new THREE.Clock();
+  (function animate() {
+    requestAnimationFrame(animate);
+    const t = clock.getElapsedTime();
+    cubes.forEach((c, i) => { c.rotation.x += c.userData.rotX; c.rotation.y += c.userData.rotY; c.position.y += Math.sin(t * c.userData.speed + c.userData.phase) * 0.003; });
+    ico.rotation.y = t * 0.4;
+    ico.rotation.x = t * 0.2;
+    torus.rotation.z = t * 0.3;
+    camera.position.x += (mouse.x * 0.8 - camera.position.x) * 0.03;
+    camera.position.y += (mouse.y * 0.5 - camera.position.y) * 0.03;
+    renderer.render(scene, camera);
+  })();
+
+  window.addEventListener('resize', () => {
+    camera.aspect = window.innerWidth / window.innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(window.innerWidth, window.innerHeight);
+  });
+}
+
+/* ===== PRODUCTS ===== */
+function renderProducts(list) {
+  const grid = document.getElementById('productsGrid');
+  grid.innerHTML = list.map(p => `
+    <div class="product-card" data-cat="${p.category}">
+      <div class="product-img">
+        ${p.badge ? `<div class="product-badge">${p.badge}</div>` : ''}
+        <button class="product-fav ${likes[p.id]?'liked':''}" onclick="toggleLike(${p.id},this)">♥</button>
+        <span style="font-size:3.5rem;position:relative;z-index:1">${p.emoji}</span>
+      </div>
+      <div class="product-info">
+        <div class="product-name">${p.name}</div>
+        <div class="product-desc">${p.desc}</div>
+        <div class="product-meta">
+          <div class="product-price">NPR ${p.price.toLocaleString()}${p.old?`<span class="old">NPR ${p.old.toLocaleString()}</span>`:''}</div>
+          <div class="product-rating">★ ${p.rating}</div>
+        </div>
+        <button class="add-btn" onclick="addToCart(${p.id})">🛒 Add to Cart</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+function filterProducts(cat, btn) {
+  if (btn) { document.querySelectorAll('.filter-btn').forEach(b=>b.classList.remove('active')); btn.classList.add('active'); }
+  currentFilter = cat;
+  const list = cat === 'all' ? PRODUCTS : PRODUCTS.filter(p => p.category === cat);
+  renderProducts(list);
+  if (btn) document.getElementById('products').scrollIntoView({ behavior: 'smooth' });
+}
+
+function toggleLike(id, btn) { likes[id] = !likes[id]; btn.classList.toggle('liked'); showToast(likes[id]?'❤️ Added to wishlist!':'💔 Removed from wishlist'); }
+
+function addToCart(id) {
+  const p = PRODUCTS.find(x => x.id === id);
+  const existing = cart.find(x => x.id === id);
+  if (existing) existing.qty++; else cart.push({ ...p, qty: 1 });
+  updateCartCount();
+  showToast(`✓ ${p.name} added to cart!`);
+}
+
+function updateCartCount() { document.getElementById('cartCount').textContent = cart.reduce((s,i) => s+i.qty, 0); }
+
+function openCart() {
+  document.getElementById('cart-overlay').classList.add('open');
+  document.getElementById('cart-drawer').classList.add('open');
+  renderCart();
+}
+function closeCart() {
+  document.getElementById('cart-overlay').classList.remove('open');
+  document.getElementById('cart-drawer').classList.remove('open');
+}
+
+function renderCart() {
+  const el = document.getElementById('cartItems');
+  const footer = document.getElementById('cartFooter');
+  if (!cart.length) {
+    el.innerHTML = '<div class="cart-empty"><div class="cart-empty-icon">🛒</div><p>Your cart is empty</p></div>';
+    footer.style.display = 'none'; return;
+  }
+  el.innerHTML = cart.map(i => `
+    <div class="cart-item">
+      <div class="cart-item-img">${i.emoji}</div>
+      <div class="cart-item-info">
+        <div class="cart-item-name">${i.name}</div>
+        <div class="cart-item-price">NPR ${(i.price * i.qty).toLocaleString()}</div>
+        <div class="cart-item-qty">
+          <button class="qty-btn" onclick="changeQty(${i.id},-1)">−</button>
+          <span class="qty-num">${i.qty}</span>
+          <button class="qty-btn" onclick="changeQty(${i.id},1)">+</button>
+          <button class="cart-remove" onclick="removeFromCart(${i.id})">🗑</button>
+        </div>
+      </div>
+    </div>
+  `).join('');
+  const total = cart.reduce((s,i)=>s+i.price*i.qty,0);
+  document.getElementById('cartSubtotal').textContent = 'NPR ' + total.toLocaleString();
+  document.getElementById('cartTotal').textContent = 'NPR ' + total.toLocaleString();
+  footer.style.display = 'block';
+}
+
+function changeQty(id, d) {
+  const i = cart.find(x=>x.id===id);
+  if (!i) return;
+  i.qty += d;
+  if (i.qty <= 0) cart = cart.filter(x=>x.id!==id);
+  updateCartCount(); renderCart();
+}
+function removeFromCart(id) { cart = cart.filter(x=>x.id!==id); updateCartCount(); renderCart(); }
+
+/* ===== CHATBOT ===== */
+let chatOpen = false;
+let chatHistory = [];
+
+function openChatbot() { chatOpen = true; document.getElementById('chatbot-panel').classList.add('open'); if (!chatHistory.length) addBotMsg("Hi! 👋 I'm NexCart AI, your shopping assistant. Ask me anything about products, orders, or deals!"); }
+function closeChatbot() { chatOpen = false; document.getElementById('chatbot-panel').classList.remove('open'); }
+
+function addBotMsg(text, typing=false) {
+  const el = document.getElementById('chatMessages');
+  const div = document.createElement('div'); div.className = 'msg bot';
+  const now = new Date(); const time = now.getHours()+':'+String(now.getMinutes()).padStart(2,'0');
+  if (typing) {
+    div.innerHTML = `<div class="msg-bubble"><div class="typing-indicator"><div class="typing-dot"></div><div class="typing-dot"></div><div class="typing-dot"></div></div></div>`;
+    el.appendChild(div); el.scrollTop = el.scrollHeight;
+    return div;
+  }
+  div.innerHTML = `<div class="msg-bubble">${text}</div><div class="msg-time">${time}</div>`;
+  el.appendChild(div); el.scrollTop = el.scrollHeight;
+}
+
+function addUserMsg(text) {
+  const el = document.getElementById('chatMessages');
+  const div = document.createElement('div'); div.className = 'msg user';
+  const now = new Date(); const time = now.getHours()+':'+String(now.getMinutes()).padStart(2,'0');
+  div.innerHTML = `<div class="msg-bubble">${text}</div><div class="msg-time">${time}</div>`;
+  el.appendChild(div); el.scrollTop = el.scrollHeight;
+}
+
+async function sendChat() {
+  const inp = document.getElementById('chatInput');
+  const text = inp.value.trim(); if (!text) return;
+  inp.value = '';
+  addUserMsg(text);
+  chatHistory.push({ role: 'user', content: text });
+  const typingDiv = addBotMsg('', true);
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-6',
+        max_tokens: 300,
+        system: `You are NexCart AI, a friendly and helpful shopping assistant for NexCart, an AI-powered e-commerce platform in Nepal. Help users with product recommendations, order inquiries, returns, and general shopping questions. Be concise (2-3 sentences max), warm, and practical. Mention prices in NPR when relevant. Available categories: Electronics, Fashion, Home & Living.`,
+        messages: chatHistory
+      })
+    });
+    const data = await res.json();
+    const reply = data.content?.[0]?.text || "Sorry, I couldn't get a response. Please try again!";
+    chatHistory.push({ role: 'assistant', content: reply });
+    typingDiv.innerHTML = `<div class="msg-bubble">${reply}</div><div class="msg-time">${new Date().getHours()}:${String(new Date().getMinutes()).padStart(2,'0')}</div>`;
+  } catch(e) {
+    typingDiv.innerHTML = `<div class="msg-bubble">I'm having trouble connecting right now. Meanwhile — try browsing our <a href="#products" style="color:var(--accent2)">products</a> or check our deals! 🛍️</div>`;
+  }
+  document.getElementById('chatMessages').scrollTop = 9999;
+}
+
+function sendQuick(chip) { document.getElementById('chatInput').value = chip.textContent; sendChat(); }
+function handleChatKey(e) { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendChat(); } }
+
+/* ===== TOAST ===== */
+let toastTimer;
+function showToast(msg) {
+  clearTimeout(toastTimer);
+  document.getElementById('toastMsg').textContent = msg;
+  document.getElementById('toast').classList.add('show');
+  toastTimer = setTimeout(() => document.getElementById('toast').classList.remove('show'), 2800);
+}
+
+/* ===== SCROLL REVEAL ===== */
+const observer = new IntersectionObserver(entries => entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('visible'); observer.unobserve(e.target); } }), { threshold: 0.1 });
+document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+
+/* ===== INIT ===== */
+init3D();
+renderProducts(PRODUCTS);
+</script>
+</body>
+</html>
